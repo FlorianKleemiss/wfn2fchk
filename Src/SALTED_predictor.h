@@ -38,7 +38,7 @@ private:
     std::unordered_map<std::string, vec2> Vmat{};
     std::unordered_map<std::string, int> Mspe{};
     std::unordered_map<int, std::vector<int64_t>> vfps{};
-    std::unordered_map<int, vec> wigner3j{};
+    std::unordered_map<int, vec> wigner3j_old{}, wigner3j_new{};
     std::unordered_map<std::string, vec> av_coefs{}, power_env_sparse{};
     std::unordered_map<int, int> featsize{};
     void read_model_data();

@@ -56,6 +56,9 @@ public:
     double trainfrac;
     std::string dfbasis;
 
+    //To check what version of the wigner3j symbols are supplied in this file
+    bool fast_equicomb = false;
+
     // The are initialized to -1 to check if they are set
     // They are set in the populateFromFile function as static_cast<int>(neighspeX.size())
     int nspe1 = -1;

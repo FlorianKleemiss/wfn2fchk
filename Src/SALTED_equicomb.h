@@ -18,7 +18,22 @@ void equicomb(int natoms, int nrad1, int nrad2,
 void equicomb(int natoms, int nang1, int nang2, int nrad1, int nrad2,
     cvec4& v1,
     cvec4& v2,
-    vec& w3j, int llmax,
+    vec& w3j,
     ivec2& llvec, int lam,
     cvec2& c2r, int featsize,
     vec& p);
+
+void equicomb_vec_multiply(const int natoms,
+    const int nrad1, const int nrad2,
+    const int nang1, const int nang2,
+    const cvec4& v1,
+    const cvec4& v2,
+    const ivec2& max_lam_per_l1l2,
+    const int& lam_max,
+    std::unordered_map<int, cvec>& p,
+    std::unordered_map<std::string, ivec>& feats_per_l1l2);
+
+void get_angular_indexes_symmetric_per_lambda(const int lam_max, const int nang1, const int nang2,
+                                            ivec2& highes_lam_per_l1l2, std::unordered_map<int, ivec2>& l1l2_per_lam);
+
+ivec2 calc_llvec(const int nang1, const int nang2, const int lam);
