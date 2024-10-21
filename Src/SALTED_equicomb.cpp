@@ -196,6 +196,7 @@ void equicomb(int natoms, int nang1, int nang2, int nrad1, int nrad2,
 
         int offset = iat * l21 * featsize;
         normfact = sqrt(inner);
+        std::cout << normfact << std::endl;
         for (ifeat = 0; ifeat < featsize; ++ifeat)
         {
             for (imu = 0; imu < l21; ++imu)

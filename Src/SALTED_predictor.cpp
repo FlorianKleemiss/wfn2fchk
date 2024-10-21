@@ -33,15 +33,6 @@ SALTEDPredictor::SALTEDPredictor(const WFN &wavy_in, const options &opt_in) : wa
         err_not_impl_f("HDF5 files are not supported by this build", std::cout);
 #endif
     }
-    config.neighspe1 = { "H", "O" , "C", "N", "S" };
-    config.neighspe2 = { "H", "O" , "C", "N", "S" };
-    config.species = { "H", "O" , "C", "N", "S" };
-    config.nspe1 = 5;
-    config.nspe2 = 5;
-    config.nang1 = 6;
-    config.nang2 = 6;
-    config.nrad1 = 5;
-    config.nrad2 = 5;
 }
 
 const std::string SALTEDPredictor::get_dfbasis_name()
@@ -171,7 +162,12 @@ void SALTEDPredictor::read_model_data()
 
     for (int lam = 0; lam < SALTED_Utils::get_lmax_max(lmax) + 1; lam++)
     {
-        wigner3j_old[lam] = readVectorFromFile<double>(opt.SALTED_DIR + "/wigners/wigner_lam-" + to_string(lam) + "_lmax1-" + to_string(config.nang1) + "_lmax2-" + to_string(config.nang2) + ".dat");
+        wigner3j_old[lam] = readVectorFromFile<double>(opt.SALTED_DIR + "/wigners_old/wigner_lam-" + to_string(lam) + "_lmax1-" + to_string(config.nang1) + "_lmax2-" + to_string(config.nang2) + ".dat");
+    }
+
+    for (int lam = 0; lam < SALTED_Utils::get_lmax_max(lmax) + 1; lam++)
+    {
+        wigner3j_new[lam] = readVectorFromFile<double>(opt.SALTED_DIR + "/wigners_new/wigner_lam-" + to_string(lam) + "_lmax1-" + to_string(config.nang1) + "_lmax2-" + to_string(config.nang2) + ".dat");
     }
     
 
@@ -304,6 +300,8 @@ vec SALTEDPredictor::predict()
                 int nfps = static_cast<int>(vfps[lam].size());
                 equicomb(natoms, (config.nspe1 * config.nrad1), (config.nspe2 * config.nrad2), v1, v2, wigner3j_old[lam], llvec_t, lam, c2r, featsize[lam], nfps, vfps[lam], p);
                 featsize[lam] = nfps;
+
+                //equicomb(natoms, config.nang1, config.nang2, (config.nspe1 * config.nrad1), (config.nspe2 * config.nrad2), v1, v2, wigner3j_old[lam], llvec_t, lam, c2r, featsize[lam], p);
             }
             else
             {
@@ -396,19 +394,17 @@ vec SALTEDPredictor::predict()
                 p_temp[l1l2_index] = res;
             }
             
-			//p of size (n1 * n2 * llmax,l21, natoms)
             vec3 p;
             if (config.sparsify) {
-                p.assign(natoms, vec2(l21, vec(vfps[lam].size(), 0.0)));
+                p.assign(natoms, vec2(l21, vec(config.ncut, 0.0)));
             }
             else {
 				p.assign(natoms, vec2(l21, vec(featsize_orig, 0.0)));
             }
-            //ptemp of size(llmax, natoms*n1*n2, l21)
 
-            for (int iat = 0; iat < natoms; ++iat) {
-                normfacts[iat] = std::sqrt(normfacts[iat]);
-            }
+
+            std::transform(normfacts.begin(), normfacts.end(), normfacts.begin(), (double(*)(double))std::sqrt);  //Take square root of every element in vector
+
 			int rad1spe1 = config.nrad1 * config.nspe1;
 			int rad2spe2 = config.nrad2 * config.nspe2;
             //for (int atom = 0; atom < natoms; ++atom) {
@@ -426,19 +422,31 @@ vec SALTEDPredictor::predict()
             //    }
             //}
             for (int atom = 0; atom < natoms; ++atom) {
-                for (int fps : vfps[lam]) {
-					int i1 = fps / rad2spe2;
-					int i2 = fps % rad2spe2;
-					int ll = (fps / rad2spe2) % l1l2_size;
+                for (int fps_idx = 0; fps_idx < config.ncut ; fps_idx++) {
+                    int fps_val = vfps[lam][fps_idx];
+                    int i1 = fps_val / (l1l2_size * rad1spe1);
+					int i2 = (fps_val / l1l2_size) % rad2spe2;
+					int ll = fps_val % l1l2_size;
 
 
                     int indxp_temp = atom * n_feats_per_atom + i1 * rad2spe2 + i2;
                     for (int l = 0; l < l21; ++l) {
-                        p[atom][l][fps] = std::real(p_temp[ll][indxp_temp][l]) / normfacts[atom];
+                        p[atom][l][fps_idx] = std::real(p_temp[ll][indxp_temp][l]) / normfacts[atom];
                     }
                 }
             }
-
+            //vec3 test;
+            //test.assign(natoms, vec2(l21, vec(vfps[lam].size(), 0.0)));
+            //for (int atom = 0; atom < natoms; ++atom) {
+            //    int fps_indx = 0;
+            //    for (int fps : vfps[lam]) {
+            //        for (int l = 0; l < l21; ++l) {
+            //            test[atom][l][fps_indx] = p[atom][l][fps];
+            //        }
+            //        fps_indx++;
+            //    }
+            //}
+            //pvec[lam] = flatten(test);
 
             pvec[lam] = flatten(p);
         }
