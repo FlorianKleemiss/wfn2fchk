@@ -211,7 +211,7 @@ void equicomb(int natoms, int nang1, int nang2, int nrad1, int nrad2,
 
 
 // Returns the l values for each combination of l1 and l2
-void get_angular_indexes_symmetric_per_lambda(const int lam_max, const int nang1, const int nang2, ivec2& highes_lam_per_l1l2, std::unordered_map<int,ivec2>& l1l2_per_lam) {
+void get_angular_indexes_symmetric_per_lambda(const int lam_max, const int nang1, const int nang2, ivec2& highes_lam_per_l1l2, std::vector<ivec2>& l1l2_per_lam) {
     // Iterate through lam_max to 0
     for (int lam = lam_max; lam >= 0; --lam) {
         for (int l1 = 0; l1 <= nang1; ++l1) {
@@ -239,40 +239,53 @@ void equicomb_vec_multiply(const int natoms,
     const cvec4& v2,
     const ivec2& max_lam_per_l1l2,
     const int& lam_max,
-    std::unordered_map<int, cvec>& p,
-    std::unordered_map<std::string, ivec>& feats_per_l1l2)
+    cvec2& p_vec,
+    ivec2& feats_per_l1l2_vec)
 {
-	
     const cdouble null(0.0, 0.0);
 
     // Declare variables at the beginning
     int l1, l2, lam, iat, n1, n2, ifeat;
-	int imu, im1, im2, mu, m1, m2;
+    int imu, im1, im2, mu, m1, m2;
     int total_features = natoms * nrad1 * nrad2 * (nang1 + 1) * (nang2 + 1);
 
+    const int radfactor1 = (nang2 + 1) * (nang1 + 1);
+    const int radfactor2 = radfactor1 * nrad2;
+    const int radfactor3 = radfactor2 * nrad1;
+
+    // Initialize the vectors
+    p_vec.resize(total_features);
+    feats_per_l1l2_vec.resize((nang1 + 1) * (nang2 + 1));
+
 #ifdef _OPENMP
-    omp_lock_t l;
-    omp_init_lock(&l);
+    int nthreads = omp_get_max_threads();
+    std::vector<ivec2> local_feats_per_l1l2(nthreads, ivec2((nang1 + 1) * (nang2 + 1)));
 #endif
+
     ProgressBar pb(total_features);
-//#pragma omp parallel for private(l1, l2, lam, iat, n1, n2, imu, im1, im2, mu, m1, m2, ifeat) default(none) shared(natoms, nrad1, nrad2, nang1, nang2, v1, v2, p, null, total_features, max_lam_per_l1l2, pb, l, std::cout)
+
+#pragma omp parallel for default(none) \
+    private(ifeat, l1, l2, lam, n1, n2, iat, imu, im1, im2, mu, m1, m2) \
+    shared(natoms, nrad1, nrad2, radfactor1, radfactor2, radfactor3, v1, v2, max_lam_per_l1l2, p_vec, feats_per_l1l2_vec, null, std::cout, pb \
+    , nang1, nang2 \
+    , nthreads \
+    , local_feats_per_l1l2)
     for (ifeat = 0; ifeat < total_features; ++ifeat)
     {
-        int l2 = ifeat % (nang2 + 1);
-        int l1 = (ifeat / (nang2 + 1)) % (nang1 + 1);
+        l2 = ifeat % (nang2 + 1);
+        l1 = (ifeat / (nang2 + 1)) % (nang1 + 1);
 
-        //Hopefully this improves the performance by only calculating the neccecary combinations
-        int lam = max_lam_per_l1l2[l1][l2];
+        // Only calculate the necessary combinations
+        lam = max_lam_per_l1l2[l1][l2];
         if (lam == -1) {
             continue;
         }
 
-        int n2 = (ifeat / ((nang2 + 1) * (nang1 + 1))) % nrad2;
-        int n1 = (ifeat / ((nang2 + 1) * (nang1 + 1) * nrad2)) % nrad1;
-        int iat = (ifeat / ((nang2 + 1) * (nang1 + 1) * nrad2 * nrad1)) % natoms;
+        n2 = (ifeat / radfactor1) % nrad2;
+        n1 = (ifeat / radfactor2) % nrad1;
+        iat = (ifeat / radfactor3) % natoms;
 
-        cvec pcmplx((2 * lam + 1) * (2 * l1 + 1), null);
-//        
+		cvec pcmplx((2 * lam + 1) * (2 * nang1 + 1),null);
         for (imu = 0; imu < 2 * lam + 1; ++imu) {
             mu = imu - lam;
             for (im1 = 0; im1 < 2 * l1 + 1; ++im1) {
@@ -283,26 +296,38 @@ void equicomb_vec_multiply(const int natoms,
                     pcmplx[imu * (2 * l1 + 1) + im1] = v1[iat][n1][l1][im1] * v2[iat][n2][l2][im2];
                 }
             }
-        } 
-#pragma omp critical
-        {
-            p[ifeat] = pcmplx;
-            feats_per_l1l2[std::to_string(l1) + std::to_string(l2)].push_back(ifeat);
         }
 
+        p_vec[ifeat] = std::move(pcmplx);
 
 #ifdef _OPENMP
-        omp_set_lock(&l);
+        int tid = omp_get_thread_num();
+        local_feats_per_l1l2[tid][l1 * (nang2 + 1) + l2].push_back(ifeat);
+#else
+        feats_per_l1l2_vec[l1 * (nang2 + 1) + l2].push_back(ifeat);
 #endif
-        pb.update(std::cout);
-#ifdef _OPENMP
-        omp_unset_lock(&l);
-#endif
+
+#pragma omp critical
+        {
+            pb.update(std::cout);
+        }
     }
+
 #ifdef _OPENMP
-    omp_destroy_lock(&l);
+    // Merge thread-local feats_per_l1l2 into the global feats_per_l1l2_vec
+    for (int tid = 0; tid < nthreads; ++tid) {
+        for (size_t idx = 0; idx < feats_per_l1l2_vec.size(); ++idx) {
+            feats_per_l1l2_vec[idx].insert(
+                feats_per_l1l2_vec[idx].end(),
+                local_feats_per_l1l2[tid][idx].begin(),
+                local_feats_per_l1l2[tid][idx].end()
+            );
+        }
+    }
 #endif
 }
+
+
 
 //Calculate the neccecary combinations of l1 and l2 for a given lam
 ivec2 calc_llvec(const int nang1, const int nang2, const int lam) {

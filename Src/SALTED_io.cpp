@@ -304,6 +304,7 @@ void Config::populate_config(const std::string& dataset_name, const int& data) {
     else if (dataset_name == "average" || dataset_name == "averages") this->average = data != 0; // Assuming boolean stored as integer
     else if (dataset_name == "field") this->field = data != 0; // Assuming boolean stored as integer
     else if (dataset_name == "sparsify") this->sparsify = data != 0; // Assuming boolean stored as integer
+	else if (dataset_name == "fast_equicomb") this->fast_equicomb = data != 0; // Assuming boolean stored as integer
     else if (dataset_name == "ncut") this->ncut = data;
     else if (dataset_name == "nang1") this->nang1 = data;
     else if (dataset_name == "nang2") this->nang2 = data;
