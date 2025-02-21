@@ -10,7 +10,7 @@ SALTEDPredictor::SALTEDPredictor(const WFN &wavy_in, options &opt_in) : _opt(opt
 
     config.salted_filename = find_first_salted_file(_opt.SALTED_DIR);
 
-    if (config.salted_filename == "") {
+	if (config.salted_filename == "") {
         std::cout << "No SALTED binary file found in directory: " << _opt.SALTED_DIR << std::endl;
         exit(1);
     }
@@ -18,7 +18,7 @@ SALTEDPredictor::SALTEDPredictor(const WFN &wavy_in, options &opt_in) : _opt(opt
     if (_opt.debug) std::cout << "Using SALTED Binary file: " << config.salted_filename << std::endl;
     _path = _path / config.salted_filename;
 	SALTED_BINARY_FILE file = SALTED_BINARY_FILE(_path);
-	config = file.gen_config();
+	file.populate_config(config);
 
     bool i_know_all = true;
 #pragma omp parallel for reduction(&& : i_know_all)
@@ -169,7 +169,6 @@ void SALTEDPredictor::read_model_data() {
 	std::unordered_map<std::string, vec2> temp_features = file.read_features();
     Vmat = file.read_projectors();
     std::string key;
-    //Assign power_env_sparse
 	for (std::string spe : config.species) {
 		for (int lam = 0; lam < lmax[spe] + 1; lam++) {
 			key = spe + std::to_string(lam);
@@ -186,9 +185,6 @@ void SALTEDPredictor::read_model_data() {
             }
 		}
 	}
-	
-
-
 }
 
 

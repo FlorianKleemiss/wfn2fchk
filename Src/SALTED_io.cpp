@@ -218,11 +218,11 @@ bool SALTED_BINARY_FILE::read_header() {
     }
     // Read version
     file.read((char*)&version, sizeof(int));
-    std::cout << "File Version: " << version << std::endl;
+    //std::cout << "File Version: " << version << std::endl;
 
 	//Read number of blocks
 	file.read((char*)&numBlocks, sizeof(int));
-	std::cout << "Number of blocks: " << numBlocks << std::endl;
+	//std::cout << "Number of blocks: " << numBlocks << std::endl;
 
 	//Now follows (Chunkname (5b str), location (4b int)) * numBlocks
     // Chunknames that are not 5 bytes long are padded with ' '
@@ -231,7 +231,7 @@ bool SALTED_BINARY_FILE::read_header() {
 		int location;
 		file.read((char*)&location, sizeof(int));
 		table_of_contents[chunkname] = location;
-		std::cout << "Chunk: " << chunkname << " at location: " << location << std::endl;
+		//std::cout << "Chunk: " << chunkname << " at location: " << location << std::endl;
 	}
 
 	header_end = file.tellg();
@@ -246,7 +246,7 @@ bool SALTED_BINARY_FILE::read_header() {
 #define READ_BLOCK(container, size) file.seekg(9, std::ios::cur); file.read((char*)container, size);
 #define READ_BLOCK_STRING(container) file.seekg(9, std::ios::cur); file.read((char*)&string_size, 4); container.resize(string_size, '\0');  file.read((char*)container.data(), string_size);
 
-void SALTED_BINARY_FILE::read_conf_data() {
+void SALTED_BINARY_FILE::populate_config(Config &config) {
     err_checkf(header_end != -1, "Header not read yet! Aborting", std::cout);
     file.seekg(table_of_contents["CONFG"], std::ios::beg);
 

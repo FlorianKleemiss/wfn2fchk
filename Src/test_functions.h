@@ -1910,7 +1910,8 @@ void gen_CUBE_for_RI(WFN wavy, const std::string aux_basis, const options *opt)
 
 void test_reading_SALTED_binary_file() {
     SALTED_BINARY_FILE file = SALTED_BINARY_FILE("combo_v2.salted");
-    Config config = file.gen_config();
+    Config config;
+    file.populate_config(config);
     std::unordered_map<int, std::vector<int64_t>> fps = file.read_fps();
 	std::unordered_map<std::string, vec> averages = file.read_averages();
     std::unordered_map<int, vec> wigners = file.read_wigners();

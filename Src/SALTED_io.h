@@ -19,7 +19,7 @@ struct Config
 {
 public:
     bool from_binary;
-    std::filesystem::path salted_filename = "";
+    std::filesystem::path salted_filename;
     std::filesystem::path predict_filename;
     bool average;
     bool field;
@@ -58,8 +58,6 @@ private:
     const std::string MAGIC_NUMBER = "SALTD";
     static const int HEADER_SIZE = 5;
     enum DataType { INT32 = 0, FLOAT64 = 1, STRING = 2 };
-    
-	Config config;
 
     std::filesystem::path filepath;
     std::ifstream file;
@@ -72,7 +70,7 @@ private:
 
     void open_file();
     bool read_header();
-    void read_conf_data();
+    
 
     template <typename T>
     void read_dataset(std::vector<T>& data, ivec& dims);
@@ -95,10 +93,8 @@ public:
         }
     };
 
-    Config gen_config() {
-        read_conf_data();
-		return config;
-    };
+    void populate_config(Config &config_in);
+
 
     std::unordered_map<int, std::vector<int64_t>> read_fps();
     std::unordered_map<std::string, vec> read_averages();
