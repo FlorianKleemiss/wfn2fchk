@@ -2479,9 +2479,13 @@ bool WFN::read_gbw(const std::filesystem::path &filename, std::ostream &file, co
             }
         }
 
+        //Two for two spins 
+        vec3 reordered_coefs(2, vec2(dimension, vec(dimension, 0.0)));
+        vec2 coefs_2D_s1 = reshape(coefficients[0], { dimension, dimension }), coefs_2D_s2;
 
-        vec2 reordered_coefs(dimension, vec(dimension, 0.0));
-        vec2 coefs_2D = reshape(coefficients[0], { dimension, dimension });
+    	if (operators == 2) {
+			coefs_2D_s2 = reshape(coefficients[1], { dimension, dimension });
+		}
         int index = 0;
         for (int atom_idx = 0; atom_idx < atoms.size(); atom_idx++) {
             std::vector<basis_set_entry> basis = atoms[atom_idx].get_basis_set();
@@ -2490,12 +2494,14 @@ bool WFN::read_gbw(const std::filesystem::path &filename, std::ostream &file, co
                 int type = basis[temp_bas_idx].get_type() -1;
                 temp_bas_idx += atoms[atom_idx].get_shellcount(shell);
                 if (type == 0) { //Skip s-type
-                    reordered_coefs[index] = coefs_2D[index];
+                    reordered_coefs[0][index] = coefs_2D_s1[index];
+					if (operators == 2 )reordered_coefs[1][index] = coefs_2D_s2[index];
                     index += 2 * type + 1;
                     continue;
                 };
                 for (int m = -type; m <= type; m++) {
-					reordered_coefs[index + constants::orca_2_pySCF[type][m]] = coefs_2D[index + m+type];
+					reordered_coefs[0][index + constants::orca_2_pySCF[type][m]] = coefs_2D_s1[index + m+type];
+					if (operators == 2) reordered_coefs[1][index + constants::orca_2_pySCF[type][m]] = coefs_2D_s2[index + m + type];
                 }
                 index += 2 * type + 1;
             }
@@ -2505,26 +2511,36 @@ bool WFN::read_gbw(const std::filesystem::path &filename, std::ostream &file, co
 		int n_occ = 0;
 		for (int i = 0; i < occupations[0].size(); i++) {if (occupations[0][i] > 0.0) n_occ++;}
         
-        vec coeff_mo(n_occ * dimension, 0.0);
-        vec coeff_small(n_occ * dimension, 0.0);
+        vec coeff_mo_s1(n_occ * dimension, 0.0), coeff_small_s1(n_occ* dimension, 0.0);
+		vec coeff_mo_s2, coeff_small_s2;
+        if (operators == 2) {
+			coeff_mo_s2.resize(n_occ* dimension, 0.0);
+			coeff_small_s2.resize(n_occ* dimension, 0.0);
+        }
         for (int i = 0; i < dimension; i++) {
             for (int oc = 0; oc < occupations[0].size(); oc++) {
                 if (occupations[0][oc] <= 0.0) continue;
-                //coeff_mo[i * n_occ + oc] = coefficients[0][i * dimension + oc] * occupations[0][oc];
-                //coeff_small[i * n_occ + oc] = coefficients[0][i * dimension + oc];
-                coeff_mo[i * n_occ + oc] = reordered_coefs[i][oc] * occupations[0][oc];
-                coeff_small[i * n_occ + oc] = reordered_coefs[i][oc];
+                coeff_mo_s1[i * n_occ + oc] = reordered_coefs[0][i][oc] * occupations[0][oc];
+                coeff_small_s1[i * n_occ + oc] = reordered_coefs[0][i][oc];
+				if (operators == 2) coeff_mo_s2[i * n_occ + oc] = reordered_coefs[1][i][oc] * occupations[1][oc];
+                if (operators == 2) coeff_small_s2[i * n_occ + oc] = reordered_coefs[1][i][oc];
             }
         }
-        //vec2 coeff_mo_2D = reshape(coeff_mo, {dimension, n_occ});
-        //vec2 coeff_small_2D = reshape(coeff_small, { dimension, n_occ });
-        //DM = dot(coeff_mo_2D, coeff_small_2D, false, true);
-        DM = dot(coeff_mo, coeff_small, (int)dimension, (int)n_occ, (int)dimension, (int)n_occ, false, true);
 
-         //build denisty matrix
-        //vec2 coeff_temp = reshape(coefficients[0], Shape2D(dimension, dimension));
-        //vec2 temp_co = diag_dot(coeff_temp, occupations[0]);
-        //DM = dot(temp_co, coeff_temp, false, true);
+        if (operators == 1) {
+			DM = dot(coeff_mo_s1, coeff_small_s1, (int)dimension, (int)n_occ, (int)dimension, (int)n_occ, false, true);
+        }
+        else {
+            vec2 DM_s1 = dot(coeff_mo_s1, coeff_small_s1, (int)dimension, (int)n_occ, (int)dimension, (int)n_occ, false, true);
+            vec2 DM_s2 = dot(coeff_mo_s2, coeff_small_s2, (int)dimension, (int)n_occ, (int)dimension, (int)n_occ, false, true);
+
+            for (int i = 0; i < DM_s1.size(); i++) {
+                for (int j = 0; j < DM_s1[0].size(); j++) {
+                    DM_s1[i][j] += DM_s2[i][j];
+                }
+            }
+            DM = DM_s1;
+        }
 
 
         if (debug)
