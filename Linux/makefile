@@ -5,14 +5,13 @@ LIBS := -Wl,-Bstatic -lgomp -static-libgcc -static-libstdc++ -Wl,-Bstatic -Wl,-B
 LIBOMP := /usr/lib/gcc/x86_64-linux-gnu/$(shell expr `g++ -dumpversion`)/libgomp.a /usr/lib/gcc/x86_64-linux-gnu/$(shell expr `g++ -dumpversion`)/libgfortran.a /usr/lib/gcc/x86_64-linux-gnu/$(shell expr `g++ -dumpversion`)/libquadmath.a
 LIBRASCALINE := ../Lib/librascaline.a
 LIBRASCALINE += ../Lib/libmetatensor.a
-LIBHDF5 := ../Lib/libhdf5.a
 LIBOPENBLAS := ../OpenBLAS/installation/lib/libopenblas.a
 LIBOPENBLAS_I := -I../OpenBLAS/installation/include
 
 all: NoSpherA2 
 
 # List of object file names without extensions
-OBJ_NAMES := wfn_class atoms properties spherical_density AtomGrid basis_set convenience sphere_lebedev_rule scattering_factors cube fchk JKFit NoSpherA2 SALTED_utilities constants ECPs_corrections libCintMain hdf5 nos_math SALTED_io SALTED_predictor SALTED_equicomb isosurface cart2sph int_g2e int_optimizer integration_params integrator rys_roots
+OBJ_NAMES := wfn_class atoms properties spherical_density AtomGrid basis_set convenience sphere_lebedev_rule scattering_factors cube fchk JKFit NoSpherA2 SALTED_utilities constants ECPs_corrections libCintMain nos_math SALTED_io SALTED_predictor SALTED_equicomb isosurface cart2sph int_g2e int_optimizer integration_params integrator rys_roots
 
 # Define the two separate lists with appropriate endings
 OBJS := $(OBJ_NAMES:=.o)
@@ -34,13 +33,13 @@ GCC_OPTS_DEBUG := -std=c++20 -Og -g -c -fmessage-length=0 -static -MMD -MP
 
 NoSpherA2: ${OBJS}
 	@echo 'Building target: $@'
-	g++ -o "NoSpherA2" ${OBJS} ${LIBOMP} ${LIBRASCALINE} ${LIBHDF5} ${LIBS} ${LIBOPENBLAS}
+	g++ -o "NoSpherA2" ${OBJS} ${LIBOMP} ${LIBRASCALINE} ${LIBS} ${LIBOPENBLAS}
 	cp NoSpherA2 ../
 	@echo 'Done building NoSpherA2'
 
 NoSpherA2_Debug: ${OBJS_d}
 	@echo 'Building target: $@'
-	g++ -o "NoSpherA2_Debug" ${OBJS_d} ${LIBOMP} ${LIBRASCALINE} ${LIBHDF5} ${LIBS} ${LIBOPENBLAS}
+	g++ -o "NoSpherA2_Debug" ${OBJS_d} ${LIBOMP} ${LIBRASCALINE} ${LIBS} ${LIBOPENBLAS}
 	cp NoSpherA2_Debug ../
 	@echo 'Done building Debug version of NoSpherA2'
 

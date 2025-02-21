@@ -26,7 +26,7 @@ std::filesystem::path find_first_salted_file(const std::filesystem::path &direct
         std::cerr << "General error: " << e.what() << std::endl;
     }
 
-    return std::filesystem::path(); // Return an empty path if no .h5 file is found
+    return std::filesystem::path(); // Return an empty path if no .salted file is found
 }
 
 template <typename Scalar>

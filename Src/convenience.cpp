@@ -79,13 +79,12 @@ std::string NoSpherA2_message(bool no_date)
         t.append("      Lukas M. Seifert,\n");
         t.append("      Daniel Bruex,\n");
         t.append("      and many more in communications or by feedback!\n");
-        t.append("NoSpherA2 uses Rascaline, Metatensor, OpenBLAS and the HDF5 library.\n");
+        t.append("NoSpherA2 uses Rascaline, Metatensor, and the OpenBLAS library.\n");
         t.append("The used packages are published under BSD-3 clause License.\n");
         t.append("Please see, respectively:\n");
         t.append("   https://github.com/Luthaf/rascaline\n");
         t.append("   https://github.com/lab-cosmo/metatensor\n");
         t.append("   https://github.com/OpenMathLib/OpenBLAS\n");
-        t.append("   https://github.com/HDFGroup/hdf5\n");
         t.append("NoSpherA2 was published at  : Kleemiss et al. Chem. Sci., 2021, 12, 1675 - 1692.\n");
         t.append("Slater IAM was published at : Kleemiss et al. J. Appl. Cryst 2024, 57, 161 - 174.\n");
     }

@@ -4,37 +4,22 @@
 #include "pch.h"
 #include <filesystem>
 
-//-SALTED D:\Models\Iron_Complex -cif mohrs_salt_IAM.cif -wfn mohrs_salt_IAM.xyz  -cpus 8 -hkl_min_max -14 14 -12 27 -19 20
-// std::string find_first_h5_file(const std::string& directory_path)
 SALTEDPredictor::SALTEDPredictor(const WFN &wavy_in, options &opt_in) : _opt(opt_in)
 {
     std::filesystem::path _path = _opt.SALTED_DIR;
 
     config.salted_filename = find_first_salted_file(_opt.SALTED_DIR);
 
-    if (config.salted_filename == "")
-    {
-        if (_opt.debug)
-        {
-            std::cout << "No HDF5 file found in the SALTED directory. Using inputs.txt instead." << std::endl;
-        }
-        _path = _path / "inputs.txt";
-        if (_opt.debug)
-        {
-            std::cout << "Using inputs file: " << _path << std::endl;
-        }
-        config.populateFromFile(_path);
+    if (config.salted_filename == "") {
+        std::cout << "No SALTED binary file found in directory: " << _opt.SALTED_DIR << std::endl;
+        exit(1);
     }
-    else
-    {
-        if (_opt.debug)
-        {
-            std::cout << "Using SALTED Binary file: " << config.salted_filename << std::endl;
-        }
-        _path = _path / config.salted_filename;
-		SALTED_BINARY_FILE file = SALTED_BINARY_FILE(_path);
-		config = file.gen_config();
-    }
+
+    if (_opt.debug) std::cout << "Using SALTED Binary file: " << config.salted_filename << std::endl;
+    _path = _path / config.salted_filename;
+	SALTED_BINARY_FILE file = SALTED_BINARY_FILE(_path);
+	config = file.gen_config();
+
     bool i_know_all = true;
 #pragma omp parallel for reduction(&& : i_know_all)
     for (int a = 0; a < wavy_in.get_ncen(); a++)
