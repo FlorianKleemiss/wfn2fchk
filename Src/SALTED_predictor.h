@@ -18,9 +18,9 @@ public:
 
     const std::string get_dfbasis_name() const;
     vec gen_SALTED_densities();
-    const std::filesystem::path get_h5_filename() const
+    const std::filesystem::path get_salted_filename() const
     {
-        return config.h5_filename;
+        return config.salted_filename;
     };
     WFN wavy;
     void shrink_intermediate_vectors();
@@ -28,10 +28,11 @@ public:
 private:
     Config config;
     options &_opt;
-
+    
     int natoms;
     std::vector<std::string> atomic_symbols{};
     std::unordered_map<std::string, std::vector<int>> atom_idx{};
+    
     std::unordered_map<std::string, int> natom_dict{}, lmax{}, nmax{};
     cvec4 v1, v2;
     void setup_atomic_environment();
@@ -44,7 +45,6 @@ private:
     std::unordered_map<std::string, vec> av_coefs{}, power_env_sparse{};
     std::unordered_map<int, int> featsize{};
     void read_model_data();
-    void read_model_data_h5();
 
     vec predict();
 };

@@ -291,7 +291,7 @@ int main(int argc, char **argv)
                 BasisSetLibrary basis_library;
                 SALTEDPredictor *temp_pred = new SALTEDPredictor(wavy[i], opt);
                 string df_basis_name = temp_pred->get_dfbasis_name();
-                filesystem::path h5file = temp_pred->get_h5_filename();
+                filesystem::path h5file = temp_pred->get_salted_filename();
                 log_file << "Using " << h5file << " for the prediction" << endl;
                 load_basis_into_WFN(temp_pred->wavy, basis_library.get_basis_set(df_basis_name));
 
@@ -462,7 +462,7 @@ int main(int argc, char **argv)
                 BasisSetLibrary basis_library;
                 SALTEDPredictor *temp_pred = new SALTEDPredictor(wavy[0], opt);
                 string df_basis_name = temp_pred->get_dfbasis_name();
-                filesystem::path h5file = temp_pred->get_h5_filename();
+                filesystem::path h5file = temp_pred->get_salted_filename();
                 log_file << "Using " << h5file << " for the prediction" << endl;
                 load_basis_into_WFN(temp_pred->wavy, basis_library.get_basis_set(df_basis_name));
 
